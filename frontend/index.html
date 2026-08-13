@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>TrustNet-5 · Blockchain Fraud Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <!-- ethers.js for clean ABI encoding when calling contracts via MetaMask -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN (MetaMask only) ══════════════ -->
+<div id="auth-screen" class="auth-screen">
+
+  <!-- left branding panel -->
+  <div class="auth-left">
+    <div class="auth-left-inner">
+      <div class="auth-logo"><span class="logo-hex">⬡</span> TrustNet-5</div>
+      <h1 class="auth-tagline">Advanced Blockchain<br>Crowdfunding Fraud<br>Prevention</h1>
+      <p class="auth-sub">Leverage TrustNet's multi-feature Transformer model and behavioral risk metrics to automatically detect fraudulent crowdfunding campaigns before fund release.</p>
+      <div class="auth-stats">
+        <div class="auth-stat"><span class="auth-stat-num">93.10%</span><span class="auth-stat-lbl">Accuracy</span></div>
+        <div class="auth-stat"><span class="auth-stat-num">25sec</span><span class="auth-stat-lbl">Avg. Analysis Time for CSV</span></div>
+        <div class="auth-stat"><span class="auth-stat-num">45sec</span><span class="auth-stat-lbl">Avg. Analysis Time for On-Chain</span></div>
+        <div class="auth-stat"><span class="auth-stat-num">12+</span><span class="auth-stat-lbl">Risk Indicators</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- right login card -->
+  <div class="auth-right">
+    <div class="auth-card active">
+      <div class="auth-card-logo"><span class="logo-hex">⬡</span> TrustNet-5</div>
+      <h2>Welcome Back</h2>
+      <p class="auth-card-sub">Secure access to blockchain crowdfunding fraud intelligence.</p>
+
+      <div class="auth-brand-row">
+        <span class="logo-hex sm">⬡</span>
+        <span class="auth-brand-name">Detection Engine v2.4</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:28px">
+        Connect your MetaMask wallet to access the dashboard.
+      </p>
+
+      <!-- MetaMask button — the only login option -->
+      <button class="btn-metamask-main" id="mm-btn" onclick="connectWallet()">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg"
+             width="28" height="28" alt="MetaMask"/>
+        <span class="mm-btn-text">Connect with MetaMask</span>
+        <span class="mm-btn-arrow">→</span>
+      </button>
+
+      <!-- status feedback -->
+      <div id="auth-status" class="auth-status-box hidden"></div>
+
+      <div class="auth-secure-note" style="margin-top:20px">
+        🔒 Connecting with MetaMask allows TrustNet to securely access campaign
+        and contributor data for fraud analysis.
+      </div>
+      <div style="text-align:center;margin-top:10px">
+        <span class="shield-badge">🛡 Protected by multi-system signature verification</span>
+      </div>
+
+      <div class="auth-footer-links">
+        <a href="#">System Documentation</a>
+        <a href="#">Security Whitepaper</a>
+        <a href="#">Support Desk</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div id="app" class="app hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span class="logo-hex">⬡</span><span>TrustNet-5</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-page="home" onclick="showPage('home')"><span class="nav-icon">⊞</span> Start Detection</a>
+      <a class="nav-item" data-page="campaigns" onclick="showPage('campaigns')"><span class="nav-icon">◫</span> Campaigns</a>
+      <a class="nav-item" data-page="features" onclick="showPage('features')"><span class="nav-icon">⚙</span> Feature Analysis</a>
+
+      <a class="nav-item" data-page="blockchain" onclick="showPage('blockchain')"><span class="nav-icon">⬡</span> Blockchain Status</a>
+      <a class="nav-item" data-page="create" onclick="showPage('create')"><span class="nav-icon">＋</span> Create Campaign</a>
+      <a class="nav-item" data-page="admin" onclick="showPage('admin')"><span class="nav-icon">⊡</span> Admin Dashboard</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-wallet">
+        <div class="sidebar-wallet-dot" id="sb-dot"></div>
+        <div style="flex:1">
+          <div id="sb-addr" class="sb-addr">Not connected</div>
+          <div id="sb-net" class="sb-net">--</div>
+        </div>
+        <button class="btn-logout" onclick="logout()" title="Disconnect wallet">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-title" id="topbar-title">Blockchain Fraud Detection System</div>
+    <div class="topbar-right">
+      <div class="api-status" id="api-pill"><span class="status-dot green"></span> API Online</div>
+      <div class="topbar-time" id="topbar-time"></div>
+      <div class="topbar-avatar" id="topbar-avatar">A</div>
+    </div>
+  </header>
+
+  <!-- PAGE CONTAINER -->
+  <main class="page-container">
+
+    <!-- ── HOME ── -->
+    <div id="page-home" class="page active">
+      <div class="home-hero">
+        <p class="home-eyebrow">BLOCKCHAIN FRAUD DETECTION SYSTEM</p>
+        <h1 class="home-title">TrustNet-5</h1>
+        <h2 class="home-subtitle">Next-Generation Blockchain Crowdfunding<br>Fraud Detection</h2>
+        <p class="home-desc">Leverage advanced TrustNet metrics and AI-dimensional feature sensitivity to automatically screen crowdfunding campaigns against sophisticated fraud patterns.</p>
+        <div class="home-btns">
+          <button class="btn-primary-lg" onclick="showPage('features')">Start Detection →</button>
+          <button class="btn-outline-lg" onclick="showPage('admin')">View Admin Dashboard</button>
+        </div>
+      </div>
+      <p class="home-section-label">DETECT FRAUDULENT CAMPAIGNS USING PRECISION METRICS</p>
+      <div class="feature-cards">
+        <div class="feature-card"><div class="fc-icon fvrs">≋</div><div class="fc-name">FVRS</div><div class="fc-full">Funding Velocity Risk Score</div><div class="fc-desc">Detects abnormal funding speed patterns and velocity anomalies</div></div>
+        <div class="feature-card"><div class="fc-icon cti">⊕</div><div class="fc-name">CTI</div><div class="fc-full">Crowd Trust Index</div><div class="fc-desc">Measures community trust signals and approval metrics</div></div>
+        <div class="feature-card"><div class="fc-icon cfis">◈</div><div class="fc-name">CFIS</div><div class="fc-full">Collusive Funding Index Score</div><div class="fc-desc">Identifies coordinated wallet behavior and graph anomalies</div></div>
+        <div class="feature-card"><div class="fc-icon ctcs">⊞</div><div class="fc-name">CTCS</div><div class="fc-full">Cross-Campaign Temporal Correlation</div><div class="fc-desc">Detects synchronized multi-campaign fraud patterns</div></div>
+        <div class="feature-card"><div class="fc-icon sdi">◉</div><div class="fc-name">SDI</div><div class="fc-full">Semantic Drift Index</div><div class="fc-desc">Calculates source similarity and plagiarism risk levels</div></div>
+      </div>
+    </div>
+
+    <!-- ── CAMPAIGNS ── -->
+    <div id="page-campaigns" class="page">
+      <div class="pg-header">
+        <div><h2 class="pg-title">Campaigns</h2><p class="pg-sub">Live campaigns from CrowdfundingCore on Sepolia</p></div>
+        <button class="btn-sm-outline" onclick="loadCampaigns()">⟳ Refresh</button>
+      </div>
+      <div id="campaigns-grid" class="campaigns-grid"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- ── CAMPAIGN DETAIL ── -->
+    <div id="page-campaign-detail" class="page">
+      <button class="back-btn" onclick="showPage('campaigns')">← Back to Campaigns</button>
+      <div id="campaign-detail-content"></div>
+    </div>
+
+    <!-- ── FEATURE ANALYSIS / CSV UPLOAD ── -->
+    <div id="page-features" class="page">
+      <div class="pg-header">
+        <div><h2 class="pg-title">Feature Analysis</h2><p class="pg-sub">Upload <code>dataset(csv)</code> — TrustNet runs all 5 pipelines and scores every campaign</p></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="fa-summary-badge" class="badge-mini hidden"></span>
+          <button class="btn-sm-outline" id="fa-reset-btn" onclick="resetCsvAnalysis()" style="display:none">✕ Reset</button>
+        </div>
+      </div>
+
+      <!-- UPLOAD STATE -->
+      <div id="fa-upload-state">
+        <div class="two-col" style="grid-template-columns:1.1fr 1fr">
+          <div class="card">
+            <div class="card-head"><span class="card-title">Upload Dataset</span></div>
+            <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+              Upload <strong>dataset(csv)</strong> — the backend will automatically run FVRS → CTI → CFIS → CTCS → SDI → TrustNet on every campaign and return fraud risk scores.
+            </p>
+            <div class="upload-zone" id="fa-upload-zone"
+                 ondragover="event.preventDefault()"
+                 ondrop="handleCsvDrop(event)"
+                 onclick="document.getElementById('fa-csv-input').click()">
+              <div class="upload-icon" id="fa-upload-icon">☁</div>
+              <p class="upload-title" id="fa-upload-title">Drag &amp; drop dataset(csv)</p>
+              <p class="upload-sub" id="fa-upload-sub">or click to browse</p>
+              <input type="file" id="fa-csv-input" accept=".csv" style="display:none" onchange="handleCsvSelect(event)"/>
+            </div>
+            <div id="fa-file-info" class="fa-file-info hidden"></div>
+            <button class="btn-create" id="fa-analyse-btn" onclick="runCsvAnalysis()" style="width:100%;margin-top:14px;display:none">
+              <span id="fa-analyse-text">⚡ Run Full TrustNet Analysis</span>
+            </button>
+            <div id="fa-progress-wrap" class="hidden" style="margin-top:14px">
+              <div class="fa-pipeline-steps" id="fa-pipeline-steps">
+                <div class="fp-step" id="fp-fvrs"><span class="fp-dot"></span><span class="fp-name">FVRS</span><span class="fp-status">Waiting</span></div>
+                <div class="fp-step" id="fp-cti"><span class="fp-dot"></span><span class="fp-name">CTI</span><span class="fp-status">Waiting</span></div>
+                <div class="fp-step" id="fp-cfis"><span class="fp-dot"></span><span class="fp-name">CFIS</span><span class="fp-status">Waiting</span></div>
+                <div class="fp-step" id="fp-ctcs"><span class="fp-dot"></span><span class="fp-name">CTCS</span><span class="fp-status">Waiting</span></div>
+                <div class="fp-step" id="fp-sdi"><span class="fp-dot"></span><span class="fp-name">SDI</span><span class="fp-status">Waiting</span></div>
+                <div class="fp-step" id="fp-trustnet"><span class="fp-dot"></span><span class="fp-name">TrustNet</span><span class="fp-status">Waiting</span></div>
+              </div>
+              <div style="margin-top:10px;font-size:12px;color:var(--muted)" id="fa-progress-msg">Initialising pipelines…</div>
+            </div>
+            <div id="fa-error-box" class="hidden" style="margin-top:12px;padding:10px 14px;border:1px solid var(--danger);border-radius:6px;background:var(--danger-bg);font-size:13px;color:var(--danger)"></div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px">Pipeline steps</div>
+            <div class="hw-steps">
+              <div class="hw-step"><div class="hw-num">1</div><div><div class="hw-title">FVRS</div><div class="hw-sub">Funding growth rate, burst rate, new user rate, timing regularity, round amount ratio</div></div></div>
+              <div class="hw-step"><div class="hw-num">2</div><div><div class="hw-title">CTI</div><div class="hw-sub">Approval score, team size, multi-chain → crowd trust index</div></div></div>
+              <div class="hw-step"><div class="hw-num">3</div><div><div class="hw-title">CFIS</div><div class="hw-sub">Wallet graph density, community detection, collision &amp; influence</div></div></div>
+              <div class="hw-step"><div class="hw-num">4</div><div><div class="hw-title">CTCS</div><div class="hw-sub">Cross-campaign temporal correlation and synchronization</div></div></div>
+              <div class="hw-step"><div class="hw-num">5</div><div><div class="hw-title">SDI</div><div class="hw-sub">Semantic plagiarism</div></div></div>
+              <div class="hw-step"><div class="hw-num">6</div><div><div class="hw-title">TrustNet</div><div class="hw-sub">32-feature Transformer → fraud probability</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS STATE -->
+      <div id="fa-results-state" class="hidden">
+        <div class="kpi-row" id="fa-kpis" style="margin-bottom:16px"></div>
+        <div class="admin-toolbar" style="margin-bottom:12px">
+          <input type="text" id="fa-search" class="admin-search" placeholder="Search campaign ID or title…" oninput="filterCsvTable()"/>
+          <select id="fa-filter-verdict" class="admin-select" onchange="filterCsvTable()">
+            <option value="">All Verdicts</option>
+            <option value="fraud">Fraud</option>
+            <option value="legit">Legitimate</option>
+          </select>
+          <select id="fa-filter-risk" class="admin-select" onchange="filterCsvTable()">
+            <option value="">All Risk</option>
+            <option value="high">High ≥70</option>
+            <option value="medium">Medium 40-69</option>
+            <option value="low">Low &lt;40</option>
+          </select>
+          <button class="btn-sm-outline" onclick="exportCsvResults()">↓ Export CSV</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="admin-table-wrap">
+            <table class="admin-table" id="fa-table">
+              <thead>
+                <tr><th>Campaign ID</th><th>Title</th><th>Fraud Prob</th><th>SDI</th><th>CTI</th><th>FVRS</th><th>CFIS</th><th>CTCS</th><th>Combined Risk</th><th>Verdict</th></tr>
+              </thead>
+              <tbody id="fa-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Modal -->
+      <div id="fa-modal-backdrop" class="modal-backdrop hidden" onclick="closeCsvModal()"></div>
+      <div id="fa-modal" class="modal hidden">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" id="fa-modal-title">Campaign Detail</div>
+            <div class="modal-sub" id="fa-modal-sub"></div>
+          </div>
+          <button class="modal-close" onclick="closeCsvModal()">✕</button>
+        </div>
+        <div class="modal-body" id="fa-modal-body"></div>
+      </div>
+
+    </div><!-- end page-features -->
+
+
+
+
+    <!-- ── BLOCKCHAIN STATUS ── -->
+    <div id="page-blockchain" class="page">
+      <div class="pg-header">
+        <div><h2 class="pg-title">Blockchain Status</h2><p class="pg-sub">Live Sepolia network connectivity and contract enforcement overview</p></div>
+        <button class="btn-sm-outline" onclick="loadBlockchainStatus()">⟳ New Scan</button>
+      </div>
+      <div class="bc-grid">
+        <div class="card bc-network-card">
+          <div class="card-head"><span class="card-title">Network Connectivity</span></div>
+          <div class="bc-network-status">
+            <div class="bc-net-indicator" id="bc-net-ind">
+              <div class="bc-net-ring"></div>
+              <div class="bc-net-label" id="bc-net-label">ACTIVE</div>
+            </div>
+            <div class="bc-net-details">
+              <div class="bcd-item"><div class="bcd-lbl">Sepolia Testnet</div><div class="bcd-val" id="bcd-chain">Chain ID: 11155111</div></div>
+              <div class="bcd-item"><div class="bcd-lbl">Block Height</div><div class="bcd-val" id="bcd-block">--</div></div>
+              <div class="bcd-item"><div class="bcd-lbl">Oracle Wallet</div><div class="bcd-val mono" id="bcd-oracle">--</div></div>
+              <div class="bcd-item"><div class="bcd-lbl">Gas Price</div><div class="bcd-val" id="bcd-gas">--</div></div>
+            </div>
+          </div>
+          <!-- Contract addresses -->
+          <div style="margin-top:16px">
+            <div class="bcd-lbl" style="margin-bottom:8px">Deployed Contracts</div>
+            <div class="contract-pill" id="cp-registry"><span class="cp-dot green"></span><span class="cp-name">TrustMetricsRegistry</span><span class="cp-addr" id="cpa-registry">--</span></div>
+            <div class="contract-pill" id="cp-security"><span class="cp-dot green"></span><span class="cp-name">SecurityModule</span><span class="cp-addr" id="cpa-security">--</span></div>
+            <div class="contract-pill" id="cp-core"><span class="cp-dot green"></span><span class="cp-name">CrowdfundingCore</span><span class="cp-addr" id="cpa-core">--</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Network Stats</span></div>
+          <div class="bc-stats-grid">
+            <div class="bcs-item"><div class="bcs-val" id="bcs-campaigns">--</div><div class="bcs-lbl">Total Campaigns</div></div>
+            <div class="bcs-item"><div class="bcs-val" id="bcs-frozen">--</div><div class="bcs-lbl">Frozen</div></div>
+            <div class="bcs-item"><div class="bcs-val" id="bcs-model">32</div><div class="bcs-lbl">Model Features</div></div>
+            <div class="bcs-item"><div class="bcs-val" id="bcs-acc">93.10%</div><div class="bcs-lbl">Accuracy</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-head"><span class="card-title">Recent Enforcement Transactions</span><a class="card-link" href="https://sepolia.etherscan.io" target="_blank">View on Etherscan →</a></div>
+        <div class="tx-table" id="tx-table">
+          <div class="tx-header"><span>Function</span><span>Campaign</span><span>Block</span><span>Time</span><span>Status</span></div>
+          <div id="tx-rows"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CREATE CAMPAIGN ── -->
+    <div id="page-create" class="page">
+      <div class="pg-header">
+        <div>
+          <h2 class="pg-title">Create Campaign</h2>
+          <p class="pg-sub">Deploy a new crowdfunding campaign to CrowdfundingCore on Sepolia</p>
+        </div>
+        <span class="badge-mini green" id="create-network-badge">Sepolia Testnet</span>
+      </div>
+
+      <div class="two-col" style="grid-template-columns:1.3fr 1fr">
+
+        <!-- Form -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Campaign Details</span>
+            <span class="badge-mini" id="create-wallet-badge">Wallet not connected</span>
+          </div>
+
+          <div class="create-form">
+            <div class="cf-group">
+              <label class="cf-label">Campaign Title <span class="cf-req">*</span></label>
+              <input id="cf-title" type="text" class="cf-input" placeholder="e.g. DeFi Lending Protocol v2" maxlength="100"/>
+              <span class="cf-hint">Max 100 characters · stored on-chain</span>
+            </div>
+
+            <div class="cf-group">
+              <label class="cf-label">Description <span class="cf-req">*</span></label>
+              <textarea id="cf-desc" class="cf-input cf-textarea" placeholder="Describe your project in detail. This is stored on-chain and used by SDI for plagiarism detection." rows="5" maxlength="1000"></textarea>
+              <span class="cf-hint"><span id="cf-desc-count">0</span>/1000 characters</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div class="cf-group">
+                <label class="cf-label">Funding Goal (ETH) <span class="cf-req">*</span></label>
+                <div class="cf-input-wrap">
+                  <input id="cf-goal" type="number" class="cf-input" placeholder="0.1" min="0.0001" step="0.001"/>
+                  <span class="cf-unit">ETH</span>
+                </div>
+                <span class="cf-hint" id="cf-goal-wei">≈ 0 wei</span>
+              </div>
+              <div class="cf-group">
+                <label class="cf-label">Duration (Days) <span class="cf-req">*</span></label>
+                <div class="cf-input-wrap">
+                  <input id="cf-days" type="number" class="cf-input" placeholder="30" min="1" max="90" value="30"/>
+                  <span class="cf-unit">days</span>
+                </div>
+                <span class="cf-hint">Max 90 days</span>
+              </div>
+            </div>
+
+            <!-- Gas estimate -->
+            <div class="cf-gas-row">
+              <span class="cf-gas-lbl">Estimated Gas</span>
+              <span class="cf-gas-val">~200,000 gas · Sepolia (free testnet ETH)</span>
+            </div>
+
+            <!-- Action buttons -->
+            <div style="display:flex;gap:10px;margin-top:8px">
+              <button class="btn-outline-lg" style="flex:1" onclick="clearCreateForm()">Clear</button>
+              <button class="btn-create" id="cf-submit-btn" onclick="createCampaign()" style="flex:2">
+                <span id="cf-btn-text">🚀 Deploy Campaign on Sepolia</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info + result panel -->
+        <div>
+          <!-- How it works -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px">How it works</div>
+            <div class="hw-steps">
+              <div class="hw-step"><div class="hw-num">1</div><div><div class="hw-title">Fill the form</div><div class="hw-sub">Title, description, goal in ETH, and duration</div></div></div>
+              <div class="hw-step"><div class="hw-num">2</div><div><div class="hw-title">MetaMask confirmation</div><div class="hw-sub">A popup appears asking you to sign and pay gas from your connected wallet</div></div></div>
+              <div class="hw-step"><div class="hw-num">3</div><div><div class="hw-title">Campaign created on-chain</div><div class="hw-sub">CrowdfundingCore.createCampaign() is called — campaign ID returned</div></div></div>
+              <div class="hw-step"><div class="hw-num">4</div><div><div class="hw-title">Auto fraud scan</div><div class="hw-sub">TrustNet immediately runs detection on the new campaign</div></div></div>
+            </div>
+          </div>
+
+          <!-- Contract info -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:10px">Contract</div>
+            <div class="cf-contract-row">
+              <span class="cf-contract-lbl">CrowdfundingCore</span>
+              <span class="cf-contract-addr" id="cf-contract-addr">0x07eC712c3974Fb7d756B7A939010157392eeb4d2</span>
+            </div>
+            <div class="cf-contract-row" style="margin-top:8px">
+              <span class="cf-contract-lbl">Network</span>
+              <span style="font-size:12px;color:var(--success)">● Sepolia Testnet (11155111)</span>
+            </div>
+          </div>
+
+          <!-- Result card — shown after tx -->
+          <div class="card hidden" id="create-result-card" style="border-color:var(--success)">
+            <div class="card-head">
+              <span class="card-title" style="color:var(--success)">✓ Campaign Created!</span>
+              <button class="btn-xs" onclick="showPage('campaigns')">View Campaigns</button>
+            </div>
+            <div id="create-result-content"></div>
+          </div>
+
+          <!-- Error card -->
+          <div class="card hidden" id="create-error-card" style="border-color:var(--danger)">
+            <div class="card-title" style="color:var(--danger);margin-bottom:8px">✗ Transaction Failed</div>
+            <div id="create-error-content" style="font-size:13px;color:var(--text2)"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── ADMIN DASHBOARD ── -->
+    <div id="page-admin" class="page">
+      <div class="pg-header">
+        <div><h2 class="pg-title">Admin Dashboard</h2><p class="pg-sub">Manual review and enforcement controls for every campaign.</p></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-sm-outline" onclick="loadAdmin()">⟳ Refresh</button>
+        </div>
+      </div>
+      <!-- KPIs -->
+      <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-val" id="kpi-total">--</div><div class="kpi-lbl">TOTAL CAMPAIGNS</div><div class="kpi-sub" id="kpi-total-sub">Loading...</div></div>
+        <div class="kpi-card fraud-kpi"><div class="kpi-val" id="kpi-fraud">--</div><div class="kpi-lbl">FRAUD DETECTED</div><div class="kpi-sub" id="kpi-fraud-sub">High risk flagged</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="kpi-released">--</div><div class="kpi-lbl">FUNDS RELEASED</div><div class="kpi-sub">Goal reached + approved</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="kpi-frozen">--</div><div class="kpi-lbl">FROZEN</div><div class="kpi-sub">Pending review</div></div>
+      </div>
+      <!-- Filters -->
+      <div class="admin-toolbar">
+        <input type="text" id="admin-search" placeholder="Search campaigns, titles, addresses…" class="admin-search" oninput="filterAdminTable()"/>
+        <div style="display:flex;gap:8px">
+          <select id="admin-filter-status" class="admin-select" onchange="filterAdminTable()">
+            <option value="">All Status</option>
+            <option value="frozen">Frozen</option>
+            <option value="flagged">Flagged</option>
+            <option value="released">Released</option>
+            <option value="active">Active</option>
+          </select>
+          <select id="admin-filter-risk" class="admin-select" onchange="filterAdminTable()">
+            <option value="">All Risk</option>
+            <option value="high">High Risk (≥70)</option>
+            <option value="medium">Medium Risk (40-69)</option>
+            <option value="low">Low Risk (&lt;40)</option>
+          </select>
+        </div>
+      </div>
+      <!-- Table -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="admin-table">
+            <thead>
+              <tr>
+                <th>Campaign</th>
+                <th>Goal / Raised</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-tbody"><tr><td colspan="6" class="tbl-loading"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Bottom cards -->
+      <div class="admin-bottom-grid" style="margin-top:16px">
+        <div class="card">
+          <div class="card-head"><span class="card-title">⚡ Model Performance</span></div>
+          <div class="perf-list">
+            <div class="perf-row"><span>Detection Accuracy</span><span class="perf-val green">93.10%</span></div>
+            <div class="perf-row"><span>Model Features</span><span class="perf-val">32</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">⛓ Blockchain Integrity</span><a class="card-link" onclick="showPage('blockchain')">View Status</a></div>
+          <div class="perf-list">
+            <div class="perf-row"><span>Network</span><span class="perf-val green">Sepolia</span></div>
+            <div class="perf-row"><span>Last Sync</span><span class="perf-val" id="last-sync">--</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Per-campaign AI Result panel (shown inline) -->
+      <div id="admin-ai-panel" class="hidden" style="margin-top:16px">
+        <div class="card" style="border-color:var(--accent)">
+          <div class="card-head">
+            <span class="card-title" id="aip-title">AI Detection Result</span>
+            <button class="btn-xs" onclick="document.getElementById('admin-ai-panel').classList.add('hidden')">✕</button>
+          </div>
+          <div id="aip-content"></div>
+        </div>
+      </div>
+    </div>
+
+  <!-- DONATE MODAL -->
+  <div id="donate-backdrop" class="modal-backdrop hidden" onclick="closeDonateModal()"></div>
+  <div id="donate-modal" class="modal hidden" style="max-width:440px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">💜 Donate to Campaign</div>
+        <div class="modal-sub" id="donate-modal-sub">Contribute ETH via oracle wallet</div>
+      </div>
+      <button class="modal-close" onclick="closeDonateModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cf-group" style="margin-bottom:16px">
+        <label class="cf-label">Amount (ETH) <span class="cf-req">*</span></label>
+        <div class="cf-input-wrap">
+          <input id="donate-amount" type="number" class="cf-input" placeholder="0.01" min="0.0001" step="0.001"/>
+          <span class="cf-unit">ETH</span>
+        </div>
+        <span class="cf-hint" id="donate-wei-preview">≈ 0 wei</span>
+      </div>
+      <!-- Quick amount buttons -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn-xs" onclick="setDonateAmount(0.001)">0.001 ETH</button>
+        <button class="btn-xs" onclick="setDonateAmount(0.005)">0.005 ETH</button>
+        <button class="btn-xs" onclick="setDonateAmount(0.01)">0.01 ETH</button>
+        <button class="btn-xs" onclick="setDonateAmount(0.05)">0.05 ETH</button>
+      </div>
+      <div id="donate-result" class="hidden" style="margin-bottom:12px;padding:10px;border-radius:6px;font-size:13px"></div>
+      <button class="btn-create" id="donate-submit-btn" onclick="submitDonation()" style="width:100%">
+        <span id="donate-btn-text">💜 Contribute ETH</span>
+      </button>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">
+        Sent via oracle wallet on Sepolia · gas paid automatically
+      </p>
+    </div>
+  </div>
+
+</main><!-- end page-container -->
+</div><!-- end #app -->
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js?v=10"></script>
+</body>
+</html>

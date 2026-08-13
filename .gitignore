@@ -1,0 +1,25 @@
+# ── Secrets — NEVER push these ──────────────────────────────
+.env
+backend/.env
+
+# ── Node ────────────────────────────────────────────────────
+node_modules/
+
+# ── Hardhat build artifacts (auto-generated) ────────────────
+cache/
+artifacts/
+
+# ── Python cache ─────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ── Backend runtime logs ─────────────────────────────────────
+backend/logs/
+
+# ── Editor / OS ──────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

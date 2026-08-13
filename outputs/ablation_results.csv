@@ -1,0 +1,9 @@
+,Accuracy,Precision,Recall,F1,AP
+All 5 metrics (full model),96.17,96.62,88.82,92.56,0.922
+Without SDI,89.83,80.86,81.37,81.11,0.895
+Without CTI,96.17,97.26,88.2,92.51,0.935
+Without FVRS,96.0,95.97,88.82,92.26,0.937
+Without CFIS,96.33,97.28,88.82,92.86,0.923
+Without CTCS,95.67,94.7,88.82,91.67,0.928
+MLP baseline (no Transformer),96.33,97.28,88.82,92.86,0.935
+Weighted average (no learning),91.17,99.09,67.7,80.44,0.929
