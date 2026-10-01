@@ -1,0 +1,6 @@
+model,mean_accuracy,std_accuracy,mean_precision,std_precision,mean_recall,std_recall,mean_f1,std_f1,mean_average_precision,std_average_precision
+Transformer,96.4333,0.3456,96.6732,1.171,89.8137,1.1283,93.1097,0.6709,0.9276,0.0151
+MLP,96.6333,0.6912,96.8323,1.7627,90.4348,1.8425,93.5114,1.3345,0.9345,0.009
+Logistic Regression,95.5667,0.6625,92.8752,1.5449,90.4348,1.8425,91.6273,1.2633,0.9293,0.0132
+Random Forest,96.4334,0.7509,96.0521,1.5645,90.4348,1.8425,93.1514,1.453,0.9303,0.0146
+Gradient Boosting,96.0,0.4249,94.7936,1.0942,90.0621,2.1063,92.3488,0.884,0.9297,0.0169

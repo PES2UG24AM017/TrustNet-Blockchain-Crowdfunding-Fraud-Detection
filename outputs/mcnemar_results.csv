@@ -1,0 +1,21 @@
+seed,model_a,model_b,statistic,p_value,a_right_b_wrong,a_wrong_b_right
+42,Transformer,MLP,0.0,1.0,0,1
+42,Transformer,Logistic Regression,0.8,0.37109337,4,1
+42,Transformer,Random Forest,0.5,0.47950012,1,1
+42,Transformer,Gradient Boosting,2.25,0.1336144,4,0
+52,Transformer,MLP,0.0,1.0,1,0
+52,Transformer,Logistic Regression,5.142857,0.0233422,7,0
+52,Transformer,Random Forest,0.8,0.37109337,4,1
+52,Transformer,Gradient Boosting,0.0,1.0,2,1
+62,Transformer,MLP,2.25,0.1336144,0,4
+62,Transformer,Logistic Regression,0.1,0.75182963,6,4
+62,Transformer,Random Forest,2.25,0.1336144,0,4
+62,Transformer,Gradient Boosting,0.1,0.75182963,6,4
+72,Transformer,MLP,1.333333,0.24821308,0,3
+72,Transformer,Logistic Regression,4.083333,0.04330814,10,2
+72,Transformer,Random Forest,0.166667,0.6830914,3,3
+72,Transformer,Gradient Boosting,1.5,0.22067136,5,1
+82,Transformer,MLP,0.0,1.0,1,0
+82,Transformer,Logistic Regression,3.125,0.07709987,7,1
+82,Transformer,Random Forest,0.0,1.0,2,1
+82,Transformer,Gradient Boosting,0.25,0.61707508,3,1

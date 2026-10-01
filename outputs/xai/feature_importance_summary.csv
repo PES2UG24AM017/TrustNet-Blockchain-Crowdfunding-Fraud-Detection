@@ -1,0 +1,6 @@
+feature,mean_absolute_attribution,mean_signed_attribution,relative_contribution_percent,rank
+sdi,0.072135,0.071187,30.36,1
+ctcs,0.066032,0.064707,27.79,2
+cti,0.038889,0.038355,16.37,3
+fvrs,0.035305,0.033074,14.86,4
+cfis,0.025219,0.022218,10.62,5

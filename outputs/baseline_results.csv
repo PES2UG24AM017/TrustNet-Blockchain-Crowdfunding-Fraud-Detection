@@ -1,0 +1,4 @@
+Model,Accuracy,Precision,Recall,F1,AP,TP,TN,FP,FN,Total_test
+Logistic Regression,95.67,94.7,88.82,91.67,0.9265,143,431,8,18,600
+Random Forest,96.17,96.62,88.82,92.56,0.9294,143,434,5,18,600
+Gradient Boosting,95.5,94.08,88.82,91.37,0.9387,143,430,9,18,600
