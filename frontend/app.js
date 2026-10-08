@@ -5,8 +5,15 @@ const API = 'http://localhost:5000';
 const SEPOLIA_ID = '0xaa36a7';
 
 let walletAddress = null;
+let ownerAddress  = null;   // set from /health — only this wallet can unfreeze/release
 let lastDetectionResult = null;
 let allCampaigns = [];
+
+// Returns true only when the connected MetaMask account is the contract owner
+function isOwner() {
+  return ownerAddress && walletAddress &&
+    walletAddress.toLowerCase() === ownerAddress.toLowerCase();
+}
 
 // CSV analysis state — declared here so showPage() can reference them safely
 let _csvFile     = null;
@@ -211,6 +218,8 @@ async function checkApiHealth() {
         pill.innerHTML = '<span class="status-dot green"></span> API Online · ' + h.feature_count + ' features';
       }
     }
+    // store owner address so we can gate admin actions
+    if (h.owner_address) ownerAddress = h.owner_address.toLowerCase();
     // populate contract addresses on blockchain page
     setContractAddresses(h.contracts);
   } catch (_) {
@@ -602,6 +611,7 @@ async function executeSmartContract() {
 async function loadBlockchainStatus() {
   try {
     const h = await apiFetch('/health');
+    if (h.owner_address) ownerAddress = h.owner_address.toLowerCase();
     setContractAddresses(h.contracts);
 
     const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
@@ -829,12 +839,17 @@ async function adminRunAI(campaignId) {
 
 // ── Admin: Approve & Release ─────────────────────────────────────────
 async function adminRelease(campaignId) {
+  if (!walletAddress) { showToast('Connect MetaMask first.', 'error'); return; }
+  if (!isOwner()) {
+    showToast('Only the contract owner can release campaign funds.', 'error');
+    return;
+  }
   if (!confirm('Approve and release funds for campaign #' + campaignId + '?\n\nThis action cannot be undone.')) return;
   try {
     showToast('Sending releaseFunds transaction…');
     const data = await apiFetch('/release', {
       method: 'POST',
-      body: JSON.stringify({ campaign_id: campaignId }),
+      body: JSON.stringify({ campaign_id: campaignId, caller_address: walletAddress }),
     });
     if (data.released) {
       showToast('Funds released ✓  TX: ' + data.transaction.tx_hash.slice(0, 16) + '…', 'success');
@@ -983,11 +998,16 @@ async function doFreeze(address) {
 
 async function doUnfreeze(address) {
   if (!address) { showToast('No address provided.', 'error'); return; }
+  if (!walletAddress) { showToast('Connect MetaMask first.', 'error'); return; }
+  if (!isOwner()) {
+    showToast('Only the contract owner can unfreeze campaigns.', 'error');
+    return;
+  }
   try {
     showToast('Sending unfreeze transaction…');
     const data = await apiFetch('/unfreeze', {
       method: 'POST',
-      body: JSON.stringify({ campaign_address: address }),
+      body: JSON.stringify({ campaign_address: address, caller_address: walletAddress }),
     });
     showToast('Unfrozen ✓  TX: ' + data.transaction.tx_hash.slice(0, 14) + '…', 'success');
     const ar = document.getElementById('det-action-result');
@@ -1259,7 +1279,7 @@ function openDonateModal(campaignId, title) {
   const sub = document.getElementById('donate-modal-sub');
   if (sub) sub.textContent = 'Campaign #' + campaignId + ' — ' + (title || '');
   const amt = document.getElementById('donate-amount');
-  if (amt) { amt.value = '0.01'; updateDonatePreview(); }
+  if (amt) { amt.value = '10000000000000000'; updateDonatePreview(); }
   const res = document.getElementById('donate-result');
   if (res) { res.classList.add('hidden'); res.textContent = ''; }
   const btn = document.getElementById('donate-submit-btn');
@@ -1279,9 +1299,9 @@ function closeDonateModal() {
   _donateCampaignId = null;
 }
 
-function setDonateAmount(eth) {
+function setDonateAmount(wei) {
   const el = document.getElementById('donate-amount');
-  if (el) { el.value = eth; updateDonatePreview(); }
+  if (el) { el.value = wei; updateDonatePreview(); }
 }
 
 function updateDonatePreview() {
@@ -1289,10 +1309,10 @@ function updateDonatePreview() {
   const el  = document.getElementById('donate-wei-preview');
   if (el) {
     if (!isNaN(val) && val > 0) {
-      const wei = BigInt(Math.round(val * 1e18));
-      el.textContent = '≈ ' + wei.toLocaleString() + ' wei';
+      const ethVal = (val / 1e18).toFixed(6);
+      el.textContent = `≈ ${ethVal} ETH`;
     } else {
-      el.textContent = '≈ 0 wei';
+      el.textContent = '≈ 0 ETH';
     }
   }
 }
@@ -1306,9 +1326,10 @@ async function submitDonation() {
   if (!_donateCampaignId && _donateCampaignId !== 0) {
     showToast('No campaign selected.', 'error'); return;
   }
-  const amountEth = parseFloat(document.getElementById('donate-amount')?.value || '0');
-  if (!amountEth || amountEth <= 0) {
-    showToast('Enter a valid amount.', 'error'); return;
+  // Input is now in Wei — read as integer directly
+  const amountWei = parseInt(document.getElementById('donate-amount')?.value || '0');
+  if (!amountWei || amountWei <= 0) {
+    showToast('Enter a valid amount in Wei.', 'error'); return;
   }
   if (!walletAddress) {
     showToast('Connect MetaMask first.', 'error'); return;
@@ -1328,7 +1349,21 @@ async function submitDonation() {
     const abi = ['function contribute(uint256 _campaignId) payable'];
     const contract = new ethers.Contract(CROWDFUNDING_CORE_ADDR, abi, signer);
 
-    const valueWei = ethers.utils.parseEther(String(amountEth));
+    const valueWei = ethers.BigNumber.from(amountWei.toString());
+
+    // Dry-run first to surface the exact revert reason before prompting MetaMask
+    try {
+      await contract.callStatic.contribute(_donateCampaignId, { value: valueWei });
+    } catch (staticErr) {
+      // Decode the revert reason (ethers v5 puts it in .reason or nested .error)
+      const reason =
+        staticErr.reason ||
+        staticErr.error?.message ||
+        staticErr.data?.message ||
+        staticErr.message ||
+        'Transaction would revert on-chain';
+      throw new Error(reason);
+    }
 
     showToast('Confirm donation in MetaMask…');
 
@@ -1345,10 +1380,10 @@ async function submitDonation() {
         res.style.background = 'var(--success-bg)';
         res.style.border     = '1px solid var(--success)';
         res.style.color      = 'var(--success)';
-        res.innerHTML = `✓ Donated ${amountEth} ETH! &nbsp;<span style="font-size:11px;font-family:var(--mono)">${receipt.transactionHash.slice(0,18)}…</span> · Block ${receipt.blockNumber}`;
+        res.innerHTML = `✓ Donated ${amountWei} Wei! &nbsp;<span style="font-size:11px;font-family:var(--mono)">${receipt.transactionHash.slice(0,18)}…</span> · Block ${receipt.blockNumber}`;
         res.classList.remove('hidden');
       }
-      showToast('Donation confirmed! ' + amountEth + ' ETH sent.', 'success');
+      showToast('Donation confirmed! ' + amountWei + ' Wei sent.', 'success');
 
       // Refresh campaign data
       setTimeout(() => {

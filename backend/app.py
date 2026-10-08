@@ -200,6 +200,7 @@ def health():
         "model":         "loaded" if model_ok else "error",
         "feature_count": feature_cnt,
         "fraud_threshold": FRAUD_THRESHOLD,
+        "owner_address": WALLET_ADDRESS,
         "contracts": {
             "TrustMetricsRegistry": TRUST_METRICS_REGISTRY,
             "SecurityModule":       SECURITY_MODULE,
@@ -597,12 +598,38 @@ def unfreeze_campaign():
     """
     Unfreeze a campaign via SecurityModule.unfreezeCampaign().
     Only the contract owner (deployer wallet) can call this.
-    Request: { "campaign_address": "0x..." }
+    Request: { "campaign_address": "0x...", "caller_address": "0x..." }
+    The caller_address must match WALLET_ADDRESS (the deployer/owner).
     """
     data             = request.get_json(force=True)
     campaign_address = data.get("campaign_address")
+    caller_address   = data.get("caller_address", "")
+
     if not campaign_address:
         return jsonify({"error": "campaign_address is required"}), 400
+
+    # Enforce owner-only: caller must be the oracle/owner wallet.
+    # Reject immediately if no caller address was provided.
+    if not caller_address:
+        logger.warning("UNFREEZE REJECTED | no caller_address supplied")
+        return jsonify({
+            "error": "Only the contract owner can unfreeze campaigns.",
+        }), 403
+
+    try:
+        caller_norm = Web3.to_checksum_address(caller_address)
+        owner_norm  = Web3.to_checksum_address(WALLET_ADDRESS)
+    except Exception:
+        logger.warning("UNFREEZE REJECTED | invalid address format | caller=%s", caller_address)
+        return jsonify({"error": "Invalid address format"}), 400
+
+    if caller_norm.lower() != owner_norm.lower():
+        logger.warning("UNFREEZE REJECTED | caller=%s is not the owner=%s",
+                       caller_address, WALLET_ADDRESS)
+        return jsonify({
+            "error": "Only the contract owner can unfreeze campaigns.",
+        }), 403
+
     try:
         addr         = Web3.to_checksum_address(campaign_address)
         receipt_info = _build_and_send(
@@ -702,17 +729,35 @@ def release_campaign():
     Request body (JSON):
     {
         "campaign_id": 0,          // on-chain integer campaign ID
-        "wallet_address": "0x..."  // creator's wallet (must match campaign.creator)
+        "caller_address": "0x..."  // must match WALLET_ADDRESS (owner/admin)
     }
 
     Note: The contract checks combined risk < riskThreshold before
-    releasing â€” if risk is too high it auto-freezes and reverts.
+    releasing -- if risk is too high it auto-freezes and reverts.
     """
-    data        = request.get_json(force=True)
-    campaign_id = data.get("campaign_id")
+    data           = request.get_json(force=True)
+    campaign_id    = data.get("campaign_id")
+    caller_address = data.get("caller_address", "")
 
     if campaign_id is None:
         return jsonify({"error": "campaign_id is required"}), 400
+
+    # Enforce owner-only: caller must be the deployer/owner wallet
+    if not caller_address:
+        logger.warning("RELEASE REJECTED | no caller_address supplied")
+        return jsonify({"error": "Only the contract owner can release campaign funds."}), 403
+
+    try:
+        caller_norm = Web3.to_checksum_address(caller_address)
+        owner_norm  = Web3.to_checksum_address(WALLET_ADDRESS)
+    except Exception:
+        logger.warning("RELEASE REJECTED | invalid address format | caller=%s", caller_address)
+        return jsonify({"error": "Invalid address format"}), 400
+
+    if caller_norm.lower() != owner_norm.lower():
+        logger.warning("RELEASE REJECTED | caller=%s is not the owner=%s",
+                       caller_address, WALLET_ADDRESS)
+        return jsonify({"error": "Only the contract owner can release campaign funds."}), 403
 
     try:
         crowdfunding = _get_crowdfunding()
