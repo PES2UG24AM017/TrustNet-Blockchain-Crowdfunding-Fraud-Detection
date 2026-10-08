@@ -509,23 +509,23 @@
     </div>
     <div class="modal-body">
       <div class="cf-group" style="margin-bottom:16px">
-        <label class="cf-label">Amount (ETH) <span class="cf-req">*</span></label>
+        <label class="cf-label">Amount (Wei) <span class="cf-req">*</span></label>
         <div class="cf-input-wrap">
-          <input id="donate-amount" type="number" class="cf-input" placeholder="0.01" min="0.0001" step="0.001"/>
-          <span class="cf-unit">ETH</span>
+          <input id="donate-amount" type="number" class="cf-input" placeholder="10000000000000000" min="1" step="1"/>
+          <span class="cf-unit">Wei</span>
         </div>
-        <span class="cf-hint" id="donate-wei-preview">≈ 0 wei</span>
+        <span class="cf-hint" id="donate-wei-preview">≈ 0 ETH</span>
       </div>
       <!-- Quick amount buttons -->
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button class="btn-xs" onclick="setDonateAmount(0.001)">0.001 ETH</button>
-        <button class="btn-xs" onclick="setDonateAmount(0.005)">0.005 ETH</button>
-        <button class="btn-xs" onclick="setDonateAmount(0.01)">0.01 ETH</button>
-        <button class="btn-xs" onclick="setDonateAmount(0.05)">0.05 ETH</button>
+        <button class="btn-xs" onclick="setDonateAmount(1000000000000000)">0.001 ETH</button>
+        <button class="btn-xs" onclick="setDonateAmount(5000000000000000)">0.005 ETH</button>
+        <button class="btn-xs" onclick="setDonateAmount(10000000000000000)">0.01 ETH</button>
+        <button class="btn-xs" onclick="setDonateAmount(50000000000000000)">0.05 ETH</button>
       </div>
       <div id="donate-result" class="hidden" style="margin-bottom:12px;padding:10px;border-radius:6px;font-size:13px"></div>
       <button class="btn-create" id="donate-submit-btn" onclick="submitDonation()" style="width:100%">
-        <span id="donate-btn-text">💜 Contribute ETH</span>
+        <span id="donate-btn-text">💜 Contribute WIE</span>
       </button>
       <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">
         Sent via oracle wallet on Sepolia · gas paid automatically
@@ -539,6 +539,6 @@
 <!-- TOAST -->
 <div id="toast" class="toast hidden"></div>
 
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
