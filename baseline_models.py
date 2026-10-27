@@ -7,7 +7,7 @@ Baselines implemented:
   1. Logistic Regression   (sklearn)
   2. Random Forest         (sklearn)
   3. Gradient Boosting     (sklearn)
-  4. XGBoost               — NOT AVAILABLE (xgboost not installed)
+  4. XGBoost               (xgboost)
 
 CRITICAL: This script uses EXACTLY the same experimental setup as
 genarate_pr_curve.py and run_ablation.py to ensure fair comparison:
@@ -40,6 +40,7 @@ Outputs:
     outputs/baselines/logistic_regression.pkl
     outputs/baselines/random_forest.pkl
     outputs/baselines/gradient_boosting.pkl
+    outputs/baselines/xgboost.pkl
 """
 
 import os
@@ -51,6 +52,7 @@ import pandas as pd
 from sklearn.linear_model     import LogisticRegression
 from sklearn.ensemble         import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.model_selection  import train_test_split
+from xgboost                  import XGBClassifier
 from sklearn.metrics          import (
     accuracy_score, precision_score, recall_score,
     f1_score, average_precision_score, confusion_matrix,
@@ -113,7 +115,7 @@ def make_split(X, y):
         random_state=SEED,
         stratify=y_temp,
     )
-    print(f"Split → train:{len(X_train)} val:{len(X_val)} test:{len(X_test)}")
+    print(f"Split: train:{len(X_train)} val:{len(X_val)} test:{len(X_test)}")
     print(f"  train fraud:{int(y_train.sum())}  val fraud:{int(y_val.sum())}  test fraud:{int(y_test.sum())}")
     return X_train, X_val, X_test, y_train, y_val, y_test
 
@@ -198,6 +200,7 @@ def get_baselines(pos_weight_ratio):
         pos_weight_ratio for fraud samples and 1.0 for legit samples,
         which is mathematically equivalent to BCEWithLogitsLoss pos_weight.
         pos_weight_ratio = legit_count / fraud_count = 2.7135 (same as Transformer).
+      - XGBClassifier: uses scale_pos_weight with the same ratio.
     """
     baselines = {
         "Logistic Regression": (
@@ -229,6 +232,19 @@ def get_baselines(pos_weight_ratio):
                 # class_weight not supported — use sample_weight in fit()
             ),
             "gradient_boosting.pkl",
+        ),
+        "XGBoost": (
+            XGBClassifier(
+                n_estimators=100,
+                learning_rate=0.1,
+                max_depth=3,
+                random_state=SEED,
+                scale_pos_weight=pos_weight_ratio,
+                eval_metric="logloss",
+                n_jobs=-1,
+                verbosity=0,
+            ),
+            "xgboost.pkl",
         ),
     }
     return baselines
@@ -312,7 +328,6 @@ def main():
     print("\nFor comparison, TrustNet Transformer:")
     print(f"  Acc=96.17%  Prec=96.62%  Rec=88.82%  F1=92.56%  AP=0.9190")
     print(f"  CM: TN=434  FP=5  FN=18  TP=143")
-    print("\nNote: XGBoost not available (module not installed).")
     print("=" * 70)
 
 
