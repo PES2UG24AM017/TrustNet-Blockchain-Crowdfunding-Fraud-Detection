@@ -213,6 +213,7 @@ CROWDFUNDING_CORE=0x582c7F0721A0A5b572233F2e1583412b946fF43A
 ```bash
 cd backend
 pip install -r requirements.txt
+pip install xgboost
 ```
 
 ### 3. Verify model is present
